@@ -1,0 +1,322 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Inscripción Universitaria - fba</title>
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Google Fonts -->
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        body {
+            font-family: 'Inter', sans-serif;
+            background: linear-gradient(135deg, #f3f4f6 0%, #e5e7eb 100%);
+            min-height: 100vh;
+        }
+        .glass-panel {
+            background: rgba(255, 255, 255, 0.95);
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.25);
+        }
+        .btn-primary {
+            background: linear-gradient(135deg, #4f46e5 0%, #6366f1 100%);
+            transition: all 0.3s ease;
+        }
+        .btn-primary:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 10px 15px -3px rgba(79, 70, 229, 0.4);
+        }
+        .loader {
+            border: 4px solid #f3f3f3;
+            border-top: 4px solid #4f46e5;
+            border-radius: 50%;
+            width: 40px;
+            height: 40px;
+            animation: spin 1s linear infinite;
+        }
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+        
+        .fade-in {
+            animation: fadeIn 0.5s ease-out forwards;
+        }
+        
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+    </style>
+</head>
+<body class="flex items-center justify-center py-12 px-4 sm:px-6 lg:px-8">
+
+    <!-- OVERLAYS -->
+    <!-- Loading Overlay -->
+    <div id="loadingOverlay" class="fixed inset-0 bg-gray-900 bg-opacity-75 z-50 hidden flex-col items-center justify-center">
+        <div class="loader mb-4"></div>
+        <h2 class="text-white text-2xl font-bold">Procesando Inscripción</h2>
+        <p class="text-gray-300 mt-2">Usted está en la cola de espera. Por favor aguarde un momento...</p>
+    </div>
+
+    <!-- Success Overlay -->
+    <div id="successOverlay" class="fixed inset-0 bg-green-900 bg-opacity-95 z-50 hidden flex-col items-center justify-center px-4 text-center">
+        <svg class="w-20 h-20 text-green-400 mb-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
+        <h2 class="text-white text-3xl font-bold mb-2">¡Inscripción Exitosa!</h2>
+        <p class="text-green-200 text-lg mb-6">Su vacante ha sido confirmada en la comisión <span id="successCommission" class="font-bold"></span>.</p>
+        <div class="bg-white p-6 rounded-lg shadow-xl max-w-lg w-full mb-8">
+            <p class="text-sm text-gray-500 mb-2 uppercase font-semibold tracking-wider">Comprobante (HASH)</p>
+            <p id="successHash" class="text-gray-900 font-mono text-sm break-all font-bold"></p>
+        </div>
+        <button onclick="window.location.reload()" class="bg-white text-green-900 font-bold py-3 px-8 rounded-full hover:bg-green-50 transition transform hover:-translate-y-1">
+            Realizar otra inscripción
+        </button>
+    </div>
+
+    <!-- Error Overlay -->
+    <div id="errorOverlay" class="fixed inset-0 bg-red-900 bg-opacity-95 z-50 hidden flex-col items-center justify-center px-4 text-center">
+        <svg class="w-20 h-20 text-red-500 mb-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
+        <h2 class="text-white text-3xl font-bold mb-2">No se pudo completar la inscripción</h2>
+        <p id="errorMessage" class="text-red-200 text-lg mb-8 max-w-md"></p>
+        <button onclick="closeError()" class="bg-white text-red-900 font-bold py-3 px-8 rounded-full hover:bg-red-50 transition transform hover:-translate-y-1">
+            Volver a intentar
+        </button>
+    </div>
+
+    <!-- MAIN FORM -->
+    <div class="max-w-3xl w-full space-y-8 glass-panel p-10 rounded-2xl fade-in relative overflow-hidden">
+        <!-- Decorative blob -->
+        <div class="absolute top-0 left-0 w-full h-2 bg-gradient-to-r from-indigo-500 via-purple-500 to-pink-500"></div>
+
+        <div>
+            <h2 class="mt-2 text-center text-4xl font-extrabold text-gray-900 tracking-tight">
+                Inscripción de Alumnos
+            </h2>
+            <p class="mt-4 text-center text-lg text-gray-600">
+                Complete el formulario para seleccionar su comisión. Los vacantes son limitados y se asignan por orden de llegada.
+            </p>
+        </div>
+
+        <form id="enrollmentForm" class="mt-8 space-y-6">
+            <div class="grid grid-cols-1 gap-y-6 gap-x-4 sm:grid-cols-2">
+                
+                <!-- DNI -->
+                <div class="sm:col-span-1">
+                    <label for="dni" class="block text-sm font-medium text-gray-700">DNI *</label>
+                    <div class="mt-1">
+                        <input type="text" name="dni" id="dni" required class="appearance-none block w-full px-4 py-3 border border-gray-300 rounded-lg shadow-sm placeholder-gray-400 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm transition duration-150">
+                    </div>
+                </div>
+
+                <!-- Legajo -->
+                <div class="sm:col-span-1">
+                    <label for="legajo" class="block text-sm font-medium text-gray-700">Legajo</label>
+                    <div class="mt-1">
+                        <input type="text" name="legajo" id="legajo" class="appearance-none block w-full px-4 py-3 border border-gray-300 rounded-lg shadow-sm placeholder-gray-400 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm transition duration-150">
+                    </div>
+                </div>
+
+                <!-- Apellido -->
+                <div class="sm:col-span-1">
+                    <label for="apellido" class="block text-sm font-medium text-gray-700">Apellido *</label>
+                    <div class="mt-1">
+                        <input type="text" name="apellido" id="apellido" required class="appearance-none block w-full px-4 py-3 border border-gray-300 rounded-lg shadow-sm placeholder-gray-400 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm transition duration-150">
+                    </div>
+                </div>
+
+                <!-- Nombre -->
+                <div class="sm:col-span-1">
+                    <label for="nombre" class="block text-sm font-medium text-gray-700">Nombre *</label>
+                    <div class="mt-1">
+                        <input type="text" name="nombre" id="nombre" required class="appearance-none block w-full px-4 py-3 border border-gray-300 rounded-lg shadow-sm placeholder-gray-400 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm transition duration-150">
+                    </div>
+                </div>
+
+                <!-- Email -->
+                <div class="sm:col-span-2">
+                    <label for="email" class="block text-sm font-medium text-gray-700">Email *</label>
+                    <div class="mt-1">
+                        <input type="email" name="email" id="email" required class="appearance-none block w-full px-4 py-3 border border-gray-300 rounded-lg shadow-sm placeholder-gray-400 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm transition duration-150">
+                    </div>
+                </div>
+
+                <!-- Commission Dropdown -->
+                <div class="sm:col-span-2">
+                    <label for="commission_id" class="block text-sm font-medium text-gray-700">Comisión Seleccionada *</label>
+                    <div class="mt-1 relative">
+                        <select id="commission_id" name="commission_id" required class="mt-1 block w-full pl-3 pr-10 py-3 text-base border-gray-300 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm rounded-lg shadow-sm bg-white cursor-pointer hover:border-gray-400 transition">
+                            <option value="">-- Seleccione una Comisión --</option>
+                            <!-- Pushed via JS -->
+                        </select>
+                        <div class="mt-2 text-sm text-gray-500 flex justify-between px-1">
+                            <span>Cupos actualizados en tiempo real</span>
+                            <button type="button" onclick="loadCommissions()" class="text-indigo-600 hover:text-indigo-800 text-xs font-semibold uppercase tracking-wider">Refrescar</button>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Checkboxes -->
+                <div class="sm:col-span-2 grid grid-cols-1 sm:grid-cols-2 gap-4 mt-2">
+                    <div class="relative flex items-start">
+                        <div class="flex items-center h-5">
+                            <input id="siu_inscribed" name="siu_inscribed" type="checkbox" value="true" class="focus:ring-indigo-500 h-5 w-5 text-indigo-600 border-gray-300 rounded cursor-pointer">
+                        </div>
+                        <div class="ml-3 text-sm">
+                            <label for="siu_inscribed" class="font-medium text-gray-700 cursor-pointer">Inscripción al SIU completada</label>
+                        </div>
+                    </div>
+
+                    <div class="relative flex items-start">
+                        <div class="flex items-center h-5">
+                            <input id="colaboratorio_account" name="colaboratorio_account" type="checkbox" value="true" class="focus:ring-indigo-500 h-5 w-5 text-indigo-600 border-gray-300 rounded cursor-pointer">
+                        </div>
+                        <div class="ml-3 text-sm">
+                            <label for="colaboratorio_account" class="font-medium text-gray-700 cursor-pointer">Posee cuenta en Colaboratorio</label>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="pt-5">
+                <button type="submit" class="w-full flex justify-center py-4 px-4 border border-transparent rounded-lg shadow-md text-lg font-medium text-white btn-primary focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500">
+                    Confirmar Inscripción
+                </button>
+            </div>
+        </form>
+    </div>
+
+    <script>
+        // Fetch Commissions
+        async function loadCommissions() {
+            try {
+                const res = await fetch('/api/commissions');
+                const text = await res.text();
+                // Check if JSON
+                let commissions = JSON.parse(text);
+                const selectGroup = document.getElementById('commission_id');
+                // Keep selected value
+                const selVal = selectGroup.value;
+                selectGroup.innerHTML = '<option value="">-- Seleccione una Comisión --</option>';
+                
+                commissions.forEach(c => {
+                    const remaining = c.quota_limit - c.current_enrolled;
+                    const isFull = remaining <= 0;
+                    
+                    const option = document.createElement('option');
+                    option.value = c.id;
+                    option.disabled = isFull;
+                    
+                    let textMsg = `${c.name} - ${c.time_range}`;
+                    if (isFull) {
+                        textMsg += ' - COMPLETADA';
+                        option.className = "text-red-500 font-medium bg-red-50";
+                    } else {
+                        textMsg += ' - Disponible';
+                        if (remaining < 10) {
+                            option.className = "text-yellow-600 font-medium";
+                        }
+                    }
+                    option.textContent = textMsg;
+                    
+                    if (c.id == selVal && !isFull) {
+                        option.selected = true;
+                    }
+                    
+                    selectGroup.appendChild(option);
+                });
+            } catch (error) {
+                console.error("Error al cargar comisiones:", error);
+            }
+        }
+
+        // Initialize and auto refresh every 5s
+        loadCommissions();
+        setInterval(loadCommissions, 5000);
+
+        // Form Submit
+        document.getElementById('enrollmentForm').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            
+            const formData = new FormData(e.target);
+            
+            // Show Loading
+            document.getElementById('loadingOverlay').classList.remove('hidden');
+            document.getElementById('loadingOverlay').classList.add('flex');
+            
+            try {
+                const response = await fetch('/api/enroll', {
+                    method: 'POST',
+                    body: formData
+                });
+                
+                const data = await response.json();
+                if(data.task_id) {
+                    pollStatus(data.task_id);
+                } else {
+                    showError("Respuesta inesperada del servidor.");
+                }
+            } catch(err) {
+                showError("Error de conexión. Intente nuevamente.");
+            }
+        });
+
+        async function pollStatus(taskId) {
+            try {
+                const res = await fetch('/api/status/' + taskId);
+                if (res.status === 404) {
+                    showError("No se encontró la tarea en la cola.");
+                    return;
+                }
+                const data = await res.json();
+                
+                if (data.status === 'pending') {
+                    // Retry after 500ms
+                    setTimeout(() => pollStatus(taskId), 500);
+                } else if (data.status === 'completed') {
+                    let result = data.result;
+                    if (result.success) {
+                        showSuccess(result.commission, result.hash);
+                    } else {
+                        showError(result.error);
+                    }
+                } else if (data.status === 'error') {
+                    showError("Ocurrió un error en el servidor interno: " + data.error);
+                }
+            } catch(err) {
+                showError("Error al consultar el estado de su inscripción. " + err.message);
+            }
+        }
+
+        function showSuccess(commission, hash) {
+            hideLoading();
+            document.getElementById('successCommission').textContent = commission;
+            document.getElementById('successHash').textContent = hash;
+            document.getElementById('successOverlay').classList.remove('hidden');
+            document.getElementById('successOverlay').classList.add('flex');
+            
+            // Refresh combo to update the quotas
+            loadCommissions();
+        }
+
+        function showError(msg) {
+            hideLoading();
+            document.getElementById('errorMessage').textContent = msg;
+            document.getElementById('errorOverlay').classList.remove('hidden');
+            document.getElementById('errorOverlay').classList.add('flex');
+            loadCommissions();
+        }
+
+        function hideLoading() {
+            document.getElementById('loadingOverlay').classList.add('hidden');
+            document.getElementById('loadingOverlay').classList.remove('flex');
+        }
+        
+        function closeError() {
+            document.getElementById('errorOverlay').classList.add('hidden');
+            document.getElementById('errorOverlay').classList.remove('flex');
+        }
+    </script>
+</body>
+</html>
