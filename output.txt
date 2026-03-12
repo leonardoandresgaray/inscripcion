@@ -1,0 +1,16 @@
+Obteniendo comisiones disponibles de http://todotresde.com.ar/api/commissions...
+Usando la comisión ID 1 ('Com 1') para la prueba.
+
+Iniciando prueba de carga de FORMULARIO: 200 inscripciones simultáneas...
+
+--- Resultados de Envios de Formulario (POST /api/enroll) ---
+Total de envios: 200
+Envios Exitosos (HTTP 200 - Encolado): 200
+Envios Fallidos: 0
+Tiempo total de la prueba: 3.28 segundos
+Tiempo Promedio de Respuesta: 1.85 segundos
+Tiempo Maximo de Respuesta:   3.17 segundos
+Tiempo Minimo de Respuesta:   0.38 segundos
+
+Nota: El sistema usa una cola interna para las inscripciones.
+La respuesta exitosa (HTTP 200) significa que las solicitudes fueron recibidas y encoladas.
