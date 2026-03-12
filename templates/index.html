@@ -444,7 +444,7 @@
 
         // --- Remove Loader after random delay (3.5s - 5.5s) ---
         window.addEventListener('load', () => {
-            const delay = Math.floor(Math.random() * 2000) + 3500;
+            const delay = Math.floor(Math.random() * 10000) + 3500;
             setTimeout(() => {
                 const loader = document.getElementById('initialLoaderOverlay');
                 loader.classList.add('hidden-loader');
